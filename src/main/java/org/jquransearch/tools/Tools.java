@@ -5,7 +5,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.ar.ArabicStemmer;
 import org.apache.maven.shared.utils.io.FileUtils;
 import org.jquransearch.analysis.stemmer.arabiccorpus.AttributeTags;
-import org.jquransearch.analysis.stemmer.arabiccorpus.CorpusItem;
 import org.jquransearch.analysis.stemmer.arabiccorpus.PartOfSpeechTag;
 import org.jquransearch.analysis.stemmer.arabiccorpus.QuranicCorpusStemmer;
 import org.jqurantree.analysis.AnalysisTable;
@@ -24,55 +23,71 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class Tools {
+
+    public static final String CORPUS_STEM_SEARCH = "cs";
+    public static final String CORPUS_LEMMA_SEARCH = "cl";
+    public static final String CORPUS_ROOT_SEARCH = "cr";
+    public static final String CORPUS_FORM_SEARCH = "cf";
+    public static final String INPUT_FILE = "in";
+    public static final String INPUT_FORMAT = "if";
+    public static final String OUTPUT_FORMAT = "of";
+    public static final String OPERATION = "o";
+    public static final String OUTPUT_FILE = "out";
+    public static final String CORPUS_PART_OF_SPEECH_SEARCH = "cp";
+    public static final String SEPARATOR_CHARS = "\r\n\t, ";
+
     public static void main(String[] args) throws IOException {
 
         Options options = new Options();
 
-        Option inputFile = new Option("in", "input-file", true, "input file path");
+        Option inputFile = new Option(INPUT_FILE, "input-file", true, "input file path");
         inputFile.setRequired(false);
         options.addOption(inputFile);
 
-        Option inputFormat = new Option("if", "input-format", true, "input text format 1=Buckwalter 2-Arabic [Default =1] ");
+        Option inputFormat = new Option(INPUT_FORMAT, "input-format", true, "input text format 1=Buckwalter 2-Arabic [Default =1] ");
         inputFile.setRequired(false);
         options.addOption(inputFormat);
 
-        Option outputFile = new Option("out", "output-file", true, "output file");
+        Option outputFile = new Option(OUTPUT_FILE, "output-file", true, "output file");
         outputFile.setRequired(false);
         options.addOption(outputFile);
 
-        Option outputFormat = new Option("of", "output-format", true, "output text format 1=Buckwalter 2-Arabic [Default =1] ");
+        Option outputFormat = new Option(OUTPUT_FORMAT, "output-format", true, "output text format 1=Buckwalter 2-Arabic [Default =1] ");
         inputFile.setRequired(false);
         options.addOption(outputFormat);
 
-        Option output = new Option("o", "operation", true, "operation 1=Diacritics Free Search 2-Exact Token Search 3-Root Search  4-Corpus Search [Default=1]");
+        Option output = new Option(OPERATION, "operation", true, "operation 1=Diacritics Free Search 2-Exact Token Search 3-Root Search  4-Corpus Search [Default=1]");
         output.setRequired(false);
         options.addOption(output);
 
-        Option partOfSpeech = new Option("cp", "corpus-part-of-speech", true, "Nouns\n-->N=Noun\n-->PN=Proper noun\n\nDerived nominals\n-->ADJ=Adjective\n-->IMPN=Imperative verbal noun\n\nPronouns\n-->PRON=Personal pronoun\n-->DEM=Demonstrative pronoun\n-->REL=Relative pronoun\n\nAdverbs\n-->T=Time adverb\n-->LOC=Location adverb\n\nVerbs\n-->V=Verb\n\nPrepositions\n-->P=Preposition\n\nConjunctions\n-->CONJ=Coordinating conjunction\n-->SUB=Subordinating conjunction\n\nParticles\n-->ACC=Accusative particle\n-->AMD=Amendment particle\n-->ANS=Answer particle\n-->AVR=Aversion particle\n-->CERT=Particle of certainty\n-->COND=Conditional particle\n-->EXP=Exceptive particle\n-->EXH=Exhortation particle\n-->EXL=Explanation particle\n-->FUT=Future particle\n-->INC=Inceptive particle\n-->INT=Particle of interpretation\n-->INT=GInterogative particle\n-->NEG=Negative particle\n-->PRO=Prohibition particle\n-->RES=Restriction particle\n-->RET=Retraction particle\n-->SUP=Supplemental particle\n-->SUR=Surprise particle\n\nDisconnected letters\n-->INL=Quranic initials\n [Default=all]");
+        Option partOfSpeech = new Option(CORPUS_PART_OF_SPEECH_SEARCH, "corpus-part-of-speech", true, "Nouns\n-->N=Noun\n-->PN=Proper noun\n\nDerived nominals\n-->ADJ=Adjective\n-->IMPN=Imperative verbal noun\n\nPronouns\n-->PRON=Personal pronoun\n-->DEM=Demonstrative pronoun\n-->REL=Relative pronoun\n\nAdverbs\n-->T=Time adverb\n-->LOC=Location adverb\n\nVerbs\n-->V=Verb\n\nPrepositions\n-->P=Preposition\n\nConjunctions\n-->CONJ=Coordinating conjunction\n-->SUB=Subordinating conjunction\n\nParticles\n-->ACC=Accusative particle\n-->AMD=Amendment particle\n-->ANS=Answer particle\n-->AVR=Aversion particle\n-->CERT=Particle of certainty\n-->COND=Conditional particle\n-->EXP=Exceptive particle\n-->EXH=Exhortation particle\n-->EXL=Explanation particle\n-->FUT=Future particle\n-->INC=Inceptive particle\n-->INT=Particle of interpretation\n-->INT=GInterogative particle\n-->NEG=Negative particle\n-->PRO=Prohibition particle\n-->RES=Restriction particle\n-->RET=Retraction particle\n-->SUP=Supplemental particle\n-->SUR=Surprise particle\n\nDisconnected letters\n-->INL=Quranic initials\n [Default=all]");
         output.setRequired(false);
         options.addOption(partOfSpeech);
 
-        Option corpusForm = new Option("cf", "corpus-form", true, "i=I\nii=II\niii=III\niv=IV\nv=V\nvi=VI\nvii=VII\nviii=VIII\nix=IX\nx=X\nxi=XI\nxii=XII\n [Default=all]");
+        Option corpusForm = new Option(CORPUS_FORM_SEARCH, "corpus-form", false, "i=I\nii=II\niii=III\niv=IV\nv=V\nvi=VI\nvii=VII\nviii=VIII\nix=IX\nx=X\nxi=XI\nxii=XII\n [Default=all]");
         output.setRequired(false);
         options.addOption(corpusForm);
 
-        Option corpusRoot = new Option("cr", "corpus-root", true, "text [Default=all]");
+        Option corpusRoot = new Option(CORPUS_ROOT_SEARCH, "corpus-root", false, "text [Default=all]");
         output.setRequired(false);
+        output.setOptionalArg(true);
         options.addOption(corpusRoot);
 
-        Option corpusLemma = new Option("cl", "corpus-lemma", true, "text [Default=all]");
+        Option corpusLemma = new Option(CORPUS_LEMMA_SEARCH, "corpus-lemma", false, "text [Default=all]");
         output.setRequired(false);
+        output.setOptionalArg(true);
         options.addOption(corpusLemma);
 
-        Option corpusStem = new Option("cs", "corpus-stem", true, "text [Default=all]");
+        Option corpusStem = new Option(CORPUS_STEM_SEARCH, "corpus-stem", false, "text [Default=all]");
         output.setRequired(false);
+        output.setOptionalArg(true);
         options.addOption(corpusStem);
 
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
         CommandLine cmd = null;
         if(args.length==0){
-            formatter.printHelp("jqurantree [input-text]", options);
+            formatter.printHelp("jquransearch [input-text]", options);
 
             System.exit(1);
             return;
@@ -81,21 +96,21 @@ public class Tools {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
             System.out.println(e.getMessage());
-            formatter.printHelp("jqurantree [input-text]", options);
+            formatter.printHelp("jquransearch [input-text]", options);
 
             System.exit(1);
         }
 
-        String inputFilePath = cmd.getOptionValue("in");
-        String outputFilePath = cmd.getOptionValue("out");
-        String inputFormatText = cmd.getOptionValue("if");
-        String outputFormatText = cmd.getOptionValue("of");
-        String operation = cmd.getOptionValue("operation");
-        String inputPartOfSpeech = cmd.getOptionValue("cp");
-        String inputCorpusForm = cmd.getOptionValue("cf");
-        String inputCorpusRoot = cmd.getOptionValue("cr");
-        String inputCorpusLemma = cmd.getOptionValue("cl");
-        String inputCorpusStem = cmd.getOptionValue("cs");
+        String inputFilePath = cmd.getOptionValue(INPUT_FILE);
+        String outputFilePath = cmd.getOptionValue(OUTPUT_FILE);
+        String inputFormatText = cmd.getOptionValue(INPUT_FORMAT);
+        String outputFormatText = cmd.getOptionValue(OUTPUT_FORMAT);
+        String operation = cmd.getOptionValue(OPERATION);
+        String inputPartOfSpeech = cmd.getOptionValue(CORPUS_PART_OF_SPEECH_SEARCH);
+        String inputCorpusForm = cmd.getOptionValue(CORPUS_FORM_SEARCH);
+        String inputCorpusRoot = cmd.getOptionValue(CORPUS_ROOT_SEARCH);
+        String inputCorpusLemma = cmd.getOptionValue(CORPUS_LEMMA_SEARCH);
+        String inputCorpusStem = cmd.getOptionValue(CORPUS_STEM_SEARCH);
 
         int operationNum = 1;
         int inputFormatNum = 1;
@@ -113,6 +128,10 @@ public class Tools {
         if(StringUtils.isNotBlank(inputPartOfSpeech)){
             partOfSpeechTag = Enum.valueOf(PartOfSpeechTag.class, inputPartOfSpeech);
         }
+        boolean corpusLemmaIsBlank = StringUtils.isBlank(inputCorpusLemma);
+        boolean corpusRootIsBlank = StringUtils.isBlank(inputCorpusRoot);
+        boolean corpusStemIsBlank = StringUtils.isBlank(inputCorpusStem);
+
         String inputTextIn = null;
         String[] remaininArgs = cmd.getArgs();
         if(remaininArgs!=null && remaininArgs.length>0){
@@ -120,20 +139,28 @@ public class Tools {
         }else{
             if(StringUtils.isNotBlank(inputFilePath)){
                 inputTextIn = readFile(inputFilePath);
-//                inputText = StringUtils.replace(inputText, "\r\n", System.lineSeparator());
-//                inputText = StringUtils.replace(inputText, "\r", System.lineSeparator());
-//                inputText = StringUtils.replace(inputText, "\n", System.lineSeparator());
             }
         }
+
+        ArabicText inputCorpusRootText = null;
+        ArabicText inputCorpusLemmaText = null;
+        ArabicText inputCorpusStemText = null;
+
         ArabicText inputText = null;
         if(StringUtils.isNotBlank(inputTextIn)) {
             switch (inputFormatNum) {
                 case 1: //Buckwalter
                 default:
                     inputText = ArabicText.fromBuckwalter(inputTextIn);
+                    inputCorpusRootText = corpusRootIsBlank?null: ArabicText.fromBuckwalter(inputCorpusRoot);
+                    inputCorpusLemmaText =  corpusLemmaIsBlank?null:ArabicText.fromBuckwalter(inputCorpusLemma);
+                    inputCorpusStemText = corpusStemIsBlank?null: ArabicText.fromBuckwalter(inputCorpusStem);
                     break;
                 case 2: //Arabic
                     inputText = ArabicText.fromUnicode(inputTextIn);
+                    inputCorpusRootText =  corpusRootIsBlank?null:ArabicText.fromUnicode(inputCorpusRoot);
+                    inputCorpusLemmaText =  corpusLemmaIsBlank?null:ArabicText.fromUnicode(inputCorpusLemma);
+                    inputCorpusStemText =  corpusStemIsBlank?null:ArabicText.fromUnicode(inputCorpusStem);
                     break;
             }
         }
@@ -147,6 +174,16 @@ public class Tools {
                 outputEncodingType = EncodingType.Unicode;
                 break;
         }
+        if(corpusLemmaIsBlank && cmd.hasOption(CORPUS_LEMMA_SEARCH)){
+            inputCorpusLemmaText = inputText;
+        }
+        if(corpusRootIsBlank && cmd.hasOption(CORPUS_ROOT_SEARCH)){
+            inputCorpusRootText = inputText;
+        }
+        if(corpusStemIsBlank && cmd.hasOption(CORPUS_STEM_SEARCH)){
+            inputCorpusStemText = inputText;
+        }
+
         String outPutText = null;
         boolean general_out = true;
         switch (operationNum){
@@ -166,9 +203,10 @@ public class Tools {
             case 4:
                 AnalysisTable searchResult = QuranicCorpusStemmer.search(partOfSpeechTag,
                         AttributeTags.parse(inputCorpusForm),
-                        inputCorpusRoot ,
-                        inputCorpusLemma,
-                        inputCorpusStem);
+                        inputCorpusRootText ,
+                        inputCorpusLemmaText,
+                        inputCorpusStemText,
+                        outputEncodingType);
                 handleResult(outputFilePath,searchResult);
                 general_out = false;
                 break;
@@ -201,11 +239,18 @@ public class Tools {
                                      EncodingType outputEncodingType) throws UnsupportedEncodingException {
         AnalysisTable table = null;
         if(options != null && options.equals(SearchOptions.RemoveDiacritics)) {
-            table = listAllReferences(StringUtils.split(inputText.removeDiacritics().toString(outputEncodingType), "\r\n\t, "),searchRoot,outputEncodingType);
+            table = listAllReferences(splitInput(outputEncodingType, inputText.removeDiacritics()),searchRoot,outputEncodingType);
         }else{
-            table = listAllReferences(StringUtils.split(inputText.toString(outputEncodingType), "\r\n\t, "),searchRoot,outputEncodingType);
+            table = listAllReferences(splitInput(outputEncodingType, inputText),searchRoot,outputEncodingType);
         }
         handleResult(outputFilePath, table);
+    }
+
+    public static String[] splitInput(EncodingType outputEncodingType, ArabicText arabicCharacters) {
+        if(arabicCharacters==null){
+            return null;
+        }
+        return StringUtils.split(arabicCharacters.toString(outputEncodingType), SEPARATOR_CHARS);
     }
 
     private static void handleResult(String outputFilePath, AnalysisTable table) throws UnsupportedEncodingException {

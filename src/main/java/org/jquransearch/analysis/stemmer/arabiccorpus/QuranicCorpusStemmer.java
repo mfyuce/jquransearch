@@ -3,6 +3,7 @@ package org.jquransearch.analysis.stemmer.arabiccorpus;
 import org.apache.maven.shared.utils.StringUtils;
 import org.jqurantree.analysis.AnalysisTable;
 import org.jqurantree.arabic.ArabicText;
+import org.jqurantree.arabic.encoding.EncodingType;
 import org.jqurantree.orthography.Document;
 import org.jqurantree.orthography.Location;
 import org.jqurantree.orthography.Token;
@@ -10,14 +11,13 @@ import org.jqurantree.orthography.Token;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.jquransearch.analysis.stemmer.arabiccorpus.CorpusItem.parse;
 import static org.jquransearch.core.utils.ResourceUtil.loadResourceFile;
+import static org.jquransearch.tools.Tools.splitInput;
 
 public class QuranicCorpusStemmer {
     public static final String ROOT = "ROOT";
@@ -114,22 +114,33 @@ public class QuranicCorpusStemmer {
 
     public static AnalysisTable search(PartOfSpeechTag partOfSpeechTag,
                                        AttributeTags form,
-                                       String root,
-                                       String lemma,
-                                       String stem) {
+                                       ArabicText root,
+                                       ArabicText lemma,
+                                       ArabicText stem,
+                                       EncodingType outputEncodingType) {
+        boolean stemIsBlank = stem == null;
+        boolean lemmaIsBlank = lemma==null;
+        boolean rootIsBlank = root==null;
+        String[] rootTexts=rootIsBlank?null:splitInput( EncodingType.Buckwalter,root) ;
+        String[] lemmaTexts=lemmaIsBlank?null: splitInput(EncodingType.Buckwalter,lemma) ;
+        String[] stemTexts=stemIsBlank?null: splitInput(EncodingType.Buckwalter,stem) ;
+        String[] noDiacriticsStems = stemIsBlank?null:splitInput(EncodingType.Buckwalter,stem.removeDiacritics());
         List<CorpusItem> ret = corpus.stream()
                 .filter(t -> {
                     if (partOfSpeechTag == PartOfSpeechTag.None || t.getPartOfSpeechTag() == partOfSpeechTag) {
                         Map<AttributeTags, String> taggedFeatures = t.getTaggedFeatures();
                         if (form == null || form == AttributeTags.None || taggedFeatures.containsKey(form)) {
                             String currentLemma = taggedFeatures.get(AttributeTags.LEM);
-                            if (StringUtils.isBlank(lemma)
-                                    || (StringUtils.isNotBlank(currentLemma) && currentLemma.equals(lemma))) {
-                                if (StringUtils.isBlank(stem) || (taggedFeatures.containsKey(AttributeTags.STEM)
-                                        && t.getText().equals(stem))) {
-                                    if (StringUtils.isNotBlank(root)) {
+                            if (lemmaIsBlank
+                                    || (StringUtils.isNotBlank(currentLemma)
+                                        && Arrays.stream(lemmaTexts).anyMatch(lemmaText->currentLemma.equals(lemmaText)) )) {
+                                String text = t.getText();
+                                String noDiacriticsText = ArabicText.fromBuckwalter(text).removeDiacritics().toBuckwalter();
+                                if (stemIsBlank || (taggedFeatures.containsKey(AttributeTags.STEM)
+                                        && Arrays.stream(noDiacriticsStems).anyMatch(noDiacriticsStem->noDiacriticsText.contains(noDiacriticsStem) ))) {
+                                    if (!rootIsBlank) {
                                         String currentRoot = taggedFeatures.get(AttributeTags.ROOT);
-                                        if (StringUtils.isNotBlank(currentRoot) && currentRoot.equals(root)) {
+                                        if (StringUtils.isNotBlank(currentRoot) && Arrays.stream(rootTexts).anyMatch(rootText->currentRoot.equals(rootText))) {
                                             return true;
                                         }
                                     } else {
@@ -141,23 +152,40 @@ public class QuranicCorpusStemmer {
                     }
                     return false;
                 }).collect(Collectors.toList());
-        return toTable(ret);
+        return toTable(ret,outputEncodingType);
     }
 
-    public static AnalysisTable toTable(List<CorpusItem> lst) {
+    public static AnalysisTable toTable(List<CorpusItem> lst,EncodingType outputEncodingType) {
          AnalysisTable tbl = new AnalysisTable(new String[]{"location","text", "tag", "features"});
          lst.stream().forEach(t->{
 
              Location location = t.getLocation();
+             String text = t.getText();
+
+             boolean isBWEncoding = outputEncodingType.equals(EncodingType.Buckwalter);
+             ArabicText bwText = ArabicText.fromBuckwalter(text);
              tbl.add(location.getChapterNumber() +
                      ":" + location.getVerseNumber() +
                      ":" + location.getTokenNumber() +
                      ":" + t.getLetter(),
-                     t.getText(),
+                     isBWEncoding ?text: bwText.toString(outputEncodingType),
                      t.getTagText(),
-                     StringUtils.join(t.getFeatures().entrySet()
-                             .stream().map(u->u.getKey()
-                                     + (StringUtils.isBlank(u.getValue())?"":":" + u.getValue()))
+                     StringUtils.join(t.getTaggedFeatures().entrySet()
+                             .stream().map(u->{
+                                 AttributeTags key = u.getKey();
+                                 String value = u.getValue();
+                                 boolean valueIsBlank = StringUtils.isBlank(value);
+
+                                 if(!isBWEncoding
+                                         && !valueIsBlank
+                                         && (key.equals(AttributeTags.LEM)
+                                                || key.equals(AttributeTags.ROOT)))
+                                 {
+                                     value = ArabicText.fromBuckwalter(value).toString(outputEncodingType);
+                                 }
+                                 return key
+                                         + (valueIsBlank?"":":" + value);
+                             })
                              .collect(Collectors.toList()).toArray(),"|"));
          });
         return tbl;
