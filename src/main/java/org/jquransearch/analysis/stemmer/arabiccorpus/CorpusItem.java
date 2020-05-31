@@ -20,7 +20,7 @@ public class CorpusItem {
         this.letter = letter;
         this.text = text;
         this.tagStr = tag;
-        this.partOfSpeechTag = Enum.valueOf(PartOfSpeechTag.class,tag);
+        this.partOfSpeechTag = PartOfSpeechTag.contains(tag);
         this.features = features;
         this.taggedFeatures = taggedFeatures;
     }
@@ -48,6 +48,28 @@ public class CorpusItem {
                 taggedFeatures);
     }
 
+    public static CorpusItem parseResearchCorpus(String[] items) {
+        String[] location = StringUtils.split(items[0], ":");
+        String[] featuresArray = StringUtils.split(items[6], "|");
+        Map<String, String> features  = new LinkedHashMap<>();
+        Map<AttributeTags, String> taggedFeatures  = new LinkedHashMap<>();
+        for (String item:featuresArray) {
+            String[] ts = StringUtils.split(item, ":");
+            features.put(ts[0],ts.length>1?ts[1]:"");
+            AttributeTags parsedTag = AttributeTags.parse(ts[0]);
+            if(parsedTag!=null && parsedTag!=AttributeTags.None) {
+                taggedFeatures.put(parsedTag, ts.length > 1 ? ts[1] : "");
+            }
+        }
+        return new CorpusItem(1,
+                Integer.parseInt( StringUtils.strip(location[0], "()")),
+                Integer.parseInt(StringUtils.strip(location[1], "()")),
+                Integer.parseInt(StringUtils.strip(location[2], "()")),
+                items[1],
+                items[2],
+                features,
+                taggedFeatures);
+    }
 
 
     public int getLetter() {

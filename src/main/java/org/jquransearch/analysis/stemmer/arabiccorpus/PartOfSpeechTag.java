@@ -1,5 +1,7 @@
 package org.jquransearch.analysis.stemmer.arabiccorpus;
 
+import java.util.Locale;
+
 /**
  * http://corpus.quran.com/documentation/tagset.jsp
  *
@@ -137,4 +139,15 @@ public enum PartOfSpeechTag {
     AVR,
     PN,
     INC;
+    public static PartOfSpeechTag contains(String test) {
+        test = test.toLowerCase(Locale.ENGLISH);
+
+        for (PartOfSpeechTag c : PartOfSpeechTag.values()) {
+            if (c.name().toLowerCase(Locale.ENGLISH).equals(test)) {
+                return c;
+            }
+        }
+
+        return null;
+    }
 }

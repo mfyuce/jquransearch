@@ -99,4 +99,6 @@ java -cp jquransearch-1.0.0-jar-with-dependencies.jar org.jquransearch.tools.Too
 
 ```
 
-Thanks to 	Ghulam Rabani (@grabani) for his friendship and his extensive search and test.
+# Research & Design 	
+Ghulam Rabani (@grabani) 
+Also thanks for his friendship and his extensive search and test.

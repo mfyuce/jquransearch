@@ -165,44 +165,47 @@ public enum AttributeTags {
                 StringUtils.replace(tag, "(", "_")
                         , ")", "_")
                         , "+", "_");
-        if(contains(tag)) {
-            return Enum.valueOf(AttributeTags.class, tag);
-        }
-        if(contains(tag)) {
-            return Enum.valueOf(AttributeTags.class, tag.toUpperCase(Locale.ENGLISH));
+        AttributeTags contains = contains(tag);
+        if(contains!=null) {
+            return contains;
         }
         String newTag = "_" + tag;
-        if(contains(newTag)) {
-            return Enum.valueOf(AttributeTags.class, newTag.toUpperCase(Locale.ENGLISH));
+        contains = contains(newTag);
+        if(contains!=null) {
+            return contains;
         }
         newTag = tag + "_";
-        if(contains(newTag)) {
-            return Enum.valueOf(AttributeTags.class, newTag.toUpperCase(Locale.ENGLISH));
+        contains = contains(newTag);
+        if(contains!=null) {
+            return contains;
         }
         newTag = "_" + tag + "_";
-        if(contains(newTag)) {
-            return Enum.valueOf(AttributeTags.class, newTag.toUpperCase(Locale.ENGLISH));
+        contains = contains(newTag);
+        if(contains!=null) {
+            return contains;
         }
 
         newTag = PLUS + tag ;
-        if(contains(newTag)) {
-            return Enum.valueOf(AttributeTags.class, newTag.toUpperCase(Locale.ENGLISH));
+        contains = contains(newTag);
+        if(contains!=null) {
+            return contains;
         }
         newTag =  tag + PLUS;
-        if(contains(newTag)) {
-            return Enum.valueOf(AttributeTags.class, newTag.toUpperCase(Locale.ENGLISH));
+        contains = contains(newTag);
+        if(contains!=null) {
+            return contains;
         }
         return null;
     }
-    public static boolean contains(String test) {
+    public static AttributeTags contains(String test) {
         test = test.toLowerCase(Locale.ENGLISH);
 
         for (AttributeTags c : AttributeTags.values()) {
             if (c.name().toLowerCase(Locale.ENGLISH).equals(test)) {
-                return true;
+                return c;
             }
         }
 
-        return false;
+        return null;
     }
 }
