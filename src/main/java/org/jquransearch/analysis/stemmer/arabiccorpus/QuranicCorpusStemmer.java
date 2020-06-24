@@ -13,7 +13,6 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.jquransearch.analysis.stemmer.arabiccorpus.CorpusItem.parse;
 import static org.jquransearch.core.utils.ResourceUtil.loadResourceFile;
@@ -189,5 +188,9 @@ public class QuranicCorpusStemmer {
                              .collect(Collectors.toList()).toArray(),"|"));
          });
         return tbl;
+    }
+
+    public static void main(String[] args) throws IOException, URISyntaxException {
+        loadCorpusFile();
     }
 }

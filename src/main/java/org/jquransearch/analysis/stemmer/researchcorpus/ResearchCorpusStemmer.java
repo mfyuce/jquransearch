@@ -19,14 +19,31 @@ import java.util.stream.Collectors;
 
 import static org.jquransearch.analysis.stemmer.arabiccorpus.CorpusItem.parse;
 import static org.jquransearch.analysis.stemmer.arabiccorpus.CorpusItem.parseResearchCorpus;
+import static org.jquransearch.analysis.stemmer.arabiccorpus.QuranicCorpusStemmer.ROOT;
 import static org.jquransearch.core.utils.ResourceUtil.loadResourceFile;
 import static org.jquransearch.tools.Tools.splitInput;
 
 public class ResearchCorpusStemmer {
-    public static final String ROOT = "ROOT";
     public static List<CorpusItem> corpus = new ArrayList<>();
     public static Map<String, String> roots = new LinkedHashMap<>();
-
+    public static Map<String, String> partOfSpeechConversion = new LinkedHashMap<String, String>(){
+        {
+            put("PREP", String.valueOf(PartOfSpeechTag.P));
+            put("part_verb", String.valueOf(PartOfSpeechTag.CERT));
+            put("pron_dem", String.valueOf(PartOfSpeechTag.DEM));
+            put("part_det", String.valueOf(PartOfSpeechTag.DET));
+            put("part_focus", String.valueOf(PartOfSpeechTag.EXL));
+            put("part_fut", String.valueOf(PartOfSpeechTag.FUT));
+            put("part_interrog", String.valueOf(PartOfSpeechTag.INTG));
+            put("noun", String.valueOf(PartOfSpeechTag.N));
+            put("part_neg", String.valueOf(PartOfSpeechTag.NEG));
+            put("noun_prop", String.valueOf(PartOfSpeechTag.PN));
+            put("prep", String.valueOf(PartOfSpeechTag.P));
+            put("pron_rel", String.valueOf(PartOfSpeechTag.REL));
+            put("conj_sub", String.valueOf(PartOfSpeechTag.SUB));
+            put("verb", String.valueOf(PartOfSpeechTag.V));
+            put("part_voc", String.valueOf(PartOfSpeechTag.VOC));
+        }};
     static {
         try {
             loadCorpusFile();
