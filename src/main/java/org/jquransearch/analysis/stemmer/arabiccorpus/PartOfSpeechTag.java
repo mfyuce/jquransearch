@@ -163,6 +163,7 @@ public enum PartOfSpeechTag {
     //interjection
     INTERJ// => Only Research Corpus
 
+
     ;
     public static PartOfSpeechTag contains(String test) {
         if(StringUtils.isNotBlank(test)) {

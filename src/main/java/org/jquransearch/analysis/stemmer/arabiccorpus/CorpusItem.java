@@ -16,6 +16,7 @@ public class CorpusItem {
     private Map<String,String> features;
     private Map<AttributeTags,String> taggedFeatures;
     public static Set<String> distinctPOS = new TreeSet<>();
+    public static Set<String> distinctAttributes = new TreeSet<>();
 
     public CorpusItem(int surah, int ayah, int word, int letter, String text, String tag, Map<String, String> features, Map<AttributeTags, String> taggedFeatures) {
         this.location = new Location(surah,ayah,word);
@@ -37,10 +38,13 @@ public class CorpusItem {
         Map<AttributeTags, String> taggedFeatures  = new LinkedHashMap<>();
         for (String item:featuresArray) {
             String[] ts = StringUtils.split(item, ":");
-            features.put(ts[0],ts.length>1?ts[1]:"");
-            AttributeTags parsedTag = AttributeTags.parse(ts[0]);
+            String t = ts[0];
+            String tv = ts.length>1?ts[1]:"";
+            features.put(t, tv );
+            distinctAttributes.add(t+":"+tv);
+            AttributeTags parsedTag = AttributeTags.parse(t);
             if(parsedTag!=null && parsedTag!=AttributeTags.None) {
-                taggedFeatures.put(parsedTag, ts.length > 1 ? ts[1] : "");
+                taggedFeatures.put(parsedTag,  tv );
             }
         }
         return new CorpusItem(Integer.parseInt(StringUtils.strip(location[0], "()")),
@@ -61,10 +65,13 @@ public class CorpusItem {
             String item = items[i];
             if(StringUtils.isNotBlank(item)) {
                 String[] ts = StringUtils.split(item, ":");
-                features.put(ts[0], ts.length > 1 ? ts[1] : "");
-                AttributeTags parsedTag = AttributeTags.parse(ts[0]);
+                String t = ts[0];
+                String tv = ts.length > 1 ? ts[1]: "";
+                features.put(t, tv );
+                distinctAttributes.add(t+":"+tv);
+                AttributeTags parsedTag = AttributeTags.parse(t);
                 if (parsedTag != null && parsedTag != AttributeTags.None) {
-                    taggedFeatures.put(parsedTag, ts.length > 1 ? ts[1] : "");
+                    taggedFeatures.put(parsedTag, tv);
                 }
             }
         }

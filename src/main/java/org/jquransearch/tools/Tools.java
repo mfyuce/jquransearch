@@ -52,11 +52,11 @@ public class Tools {
         outputFile.setRequired(false);
         options.addOption(outputFile);
 
-        Option outputFormat = new Option(OUTPUT_FORMAT, "output-format", true, "output text format 1=Buckwalter 2-Arabic [Default =1] ");
+        Option outputFormat = new Option(OUTPUT_FORMAT, "output-format", true, "output text format 1-Buckwalter 2-Arabic [Default =1] ");
         inputFile.setRequired(false);
         options.addOption(outputFormat);
 
-        Option output = new Option(OPERATION, "operation", true, "operation 1=Diacritics Free Search 2-Exact Token Search 3-Root Search  4-Corpus Search [Default=1]");
+        Option output = new Option(OPERATION, "operation", true, "operation 1-Diacritics Free Search 2-Exact Token Search 3-Root Search  4-Corpus Search [Default=1]");
         output.setRequired(false);
         options.addOption(output);
 
@@ -64,7 +64,7 @@ public class Tools {
         output.setRequired(false);
         options.addOption(partOfSpeech);
 
-        Option corpusForm = new Option(CORPUS_FORM_SEARCH, "corpus-form", false, "i=I\nii=II\niii=III\niv=IV\nv=V\nvi=VI\nvii=VII\nviii=VIII\nix=IX\nx=X\nxi=XI\nxii=XII\n [Default=all]");
+        Option corpusForm = new Option(CORPUS_FORM_SEARCH, "corpus-form", false, "Corpus verb forms\ni=I\nii=II\niii=III\niv=IV\nv=V\nvi=VI\nvii=VII\nviii=VIII\nix=IX\nx=X\nxi=XI\nxii=XII\n [Default=all]");
         output.setRequired(false);
         options.addOption(corpusForm);
 
