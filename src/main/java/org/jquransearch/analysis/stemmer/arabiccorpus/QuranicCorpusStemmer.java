@@ -1,6 +1,7 @@
 package org.jquransearch.analysis.stemmer.arabiccorpus;
 
 import org.apache.maven.shared.utils.StringUtils;
+import org.jquransearch.core.CorpusLocation;
 import org.jqurantree.analysis.AnalysisTable;
 import org.jqurantree.arabic.ArabicText;
 import org.jqurantree.arabic.encoding.EncodingType;
@@ -20,7 +21,7 @@ import static org.jquransearch.tools.Tools.splitInput;
 
 public class QuranicCorpusStemmer {
     public static final String ROOT = "ROOT";
-    public static List<CorpusItem> corpus = new ArrayList<>();
+    public static Map<CorpusLocation, CorpusItem> corpus = new LinkedHashMap<CorpusLocation, CorpusItem>();
     public static Map<String, String> roots = new LinkedHashMap<>();
 
     static {
@@ -40,7 +41,7 @@ public class QuranicCorpusStemmer {
             if (StringUtils.isNotBlank(trim) && !trim.startsWith("#") && !trim.startsWith("LOCATION")) {
                 String[] items = line.split("\t", -1);
                 CorpusItem parsed = parse(items);
-                Location currentLocation = parsed.getLocation();
+                CorpusLocation currentLocation = parsed.getLocation();
 
                 if (lastLocation != null && !lastLocation.equals(currentLocation)) {
                     // unrootable word
@@ -89,7 +90,11 @@ public class QuranicCorpusStemmer {
                     inBetween = String.format("%s%s", StringUtils.isNotBlank(inBetween) ? inBetween : "", text);
                     lastLocation = currentLocation;
                 }
-                corpus.add(parsed);
+
+                if(corpus.containsKey(currentLocation)){
+                    System.out.println();
+                }
+                corpus.put(currentLocation, parsed);
             }
         }
     }
@@ -124,7 +129,7 @@ public class QuranicCorpusStemmer {
         String[] lemmaTexts=lemmaIsBlank?null: splitInput(EncodingType.Buckwalter,lemma) ;
         String[] stemTexts=stemIsBlank?null: splitInput(EncodingType.Buckwalter,stem) ;
         String[] noDiacriticsStems = stemIsBlank?null:splitInput(EncodingType.Buckwalter,stem.removeDiacritics());
-        List<CorpusItem> ret = corpus.stream()
+        List<CorpusItem> ret = corpus.values().stream()
                 .filter(t -> {
                     if (partOfSpeechTag == PartOfSpeechTag.None || t.getPartOfSpeechTag() == partOfSpeechTag) {
                         Map<AttributeTags, String> taggedFeatures = t.getTaggedFeatures();
@@ -158,7 +163,7 @@ public class QuranicCorpusStemmer {
          AnalysisTable tbl = new AnalysisTable(new String[]{"location","text", "tag", "features"});
          lst.stream().forEach(t->{
 
-             Location location = t.getLocation();
+             CorpusLocation location = t.getLocation();
              String text = t.getText();
 
              boolean isBWEncoding = outputEncodingType.equals(EncodingType.Buckwalter);
@@ -166,7 +171,7 @@ public class QuranicCorpusStemmer {
              tbl.add(location.getChapterNumber() +
                      ":" + location.getVerseNumber() +
                      ":" + location.getTokenNumber() +
-                     ":" + t.getLetter(),
+                     ":" + location.getLetter(),
                      isBWEncoding ?text: bwText.toString(outputEncodingType),
                      t.getTagText(),
                      StringUtils.join(t.getTaggedFeatures().entrySet()

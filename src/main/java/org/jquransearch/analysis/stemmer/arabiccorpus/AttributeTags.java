@@ -3,7 +3,9 @@ package org.jquransearch.analysis.stemmer.arabiccorpus;
 import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.Attr;
 
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import static org.apache.commons.lang.StringUtils.isNumeric;
 
@@ -152,7 +154,7 @@ public enum AttributeTags {
     _2FS;
 
     public static final String PLUS = "_PLUS_";
-
+    public static Map<String,AttributeTags> tagMaps = null;
     public static AttributeTags parse(String tag) {
         if(StringUtils.isBlank(tag)){
             return None;
@@ -199,13 +201,12 @@ public enum AttributeTags {
     }
     public static AttributeTags contains(String test) {
         test = test.toLowerCase(Locale.ENGLISH);
-
-        for (AttributeTags c : AttributeTags.values()) {
-            if (c.name().toLowerCase(Locale.ENGLISH).equals(test)) {
-                return c;
+        if (tagMaps == null) {
+            tagMaps = new LinkedHashMap<>();
+            for (AttributeTags c : AttributeTags.values()) {
+                tagMaps.put(c.name().toLowerCase(Locale.ENGLISH), c);
             }
         }
-
-        return null;
+        return tagMaps.get(test);
     }
 }

@@ -1,15 +1,14 @@
 package org.jquransearch.analysis.stemmer.arabiccorpus;
 
 import org.apache.commons.lang.StringUtils;
-import org.jqurantree.orthography.Location;
+import org.jquransearch.core.CorpusLocation;
 
 import java.util.*;
 
 import static org.jquransearch.analysis.stemmer.researchcorpus.ResearchCorpusStemmer.partOfSpeechConversion;
 
 public class CorpusItem {
-    private Location location;
-    private int letter;
+    private CorpusLocation location;
     private String text;
     private String tagStr;
     private PartOfSpeechTag partOfSpeechTag;
@@ -19,8 +18,7 @@ public class CorpusItem {
     public static Set<String> distinctAttributes = new TreeSet<>();
 
     public CorpusItem(int surah, int ayah, int word, int letter, String text, String tag, Map<String, String> features, Map<AttributeTags, String> taggedFeatures) {
-        this.location = new Location(surah,ayah,word);
-        this.letter = letter;
+        this.location = new CorpusLocation(surah,ayah,word,letter);
         this.text = text;
         this.tagStr = tag;
         this.partOfSpeechTag = PartOfSpeechTag.contains(tag);
@@ -95,14 +93,11 @@ public class CorpusItem {
     }
 
 
-    public int getLetter() {
-        return letter;
-    }
 
     public String getText() {
         return text;
     }
-    public Location getLocation() {
+    public CorpusLocation getLocation() {
         return location;
     }
     public PartOfSpeechTag getPartOfSpeechTag() {
@@ -121,7 +116,6 @@ public class CorpusItem {
     @Override
     public String toString() {
         return "location=" + location +
-                ", letter=" + letter +
                 ", text='" + text + '\'' +
                 ", tagStr='" + tagStr + '\'' +
                 ", partOfSpeechTag=" + partOfSpeechTag +
