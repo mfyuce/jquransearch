@@ -196,6 +196,6 @@ public class QuranicCorpusStemmer {
     }
 
     public static void main(String[] args) throws IOException, URISyntaxException {
-        loadCorpusFile();
+//        loadCorpusFile();
     }
 }

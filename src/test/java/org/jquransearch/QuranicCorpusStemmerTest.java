@@ -50,7 +50,7 @@ public class QuranicCorpusStemmerTest {
         System.out.println();
     }
     @Test
-//    @Ignore
+    @Ignore
     public void corpusCompareTestPositions()  {
         for (CorpusLocation i: ResearchCorpusStemmer.corpus.keySet()) {
             if(!QuranicCorpusStemmer.corpus.containsKey(i)){
@@ -61,6 +61,24 @@ public class QuranicCorpusStemmerTest {
         for (CorpusLocation i: QuranicCorpusStemmer.corpus.keySet()) {
             if(!ResearchCorpusStemmer.corpus.containsKey(i)){
                 System.out.println(QuranicCorpusStemmer.corpus.get(i));
+            }
+        }
+        System.out.println();
+    }
+    @Test
+//    @Ignore
+    public void corpusCompareTestPartOfSpeech()  {
+        for (CorpusItem research: ResearchCorpusStemmer.corpus.values()) {
+            CorpusItem corpus = QuranicCorpusStemmer.corpus.get(research.getLocation());
+            if(corpus!=null && research.getPartOfSpeechTag() != corpus.getPartOfSpeechTag()){
+                System.out.println(ResearchCorpusStemmer.corpus.get(corpus));
+            }
+        }
+
+        for (CorpusItem corpus: QuranicCorpusStemmer.corpus.values()) {
+            CorpusItem research = ResearchCorpusStemmer.corpus.get(corpus.getLocation());
+            if(corpus!=null && research.getPartOfSpeechTag() != corpus.getPartOfSpeechTag()){
+                System.out.println(ResearchCorpusStemmer.corpus.get(corpus));
             }
         }
         System.out.println();

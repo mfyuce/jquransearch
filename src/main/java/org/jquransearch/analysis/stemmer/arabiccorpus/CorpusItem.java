@@ -16,6 +16,7 @@ public class CorpusItem {
     private Map<AttributeTags,String> taggedFeatures;
     public static Set<String> distinctPOS = new TreeSet<>();
     public static Set<String> distinctAttributes = new TreeSet<>();
+    public static Set<String> distinctAttributeValues = new TreeSet<>();
 
     public CorpusItem(int surah, int ayah, int word, int letter, String text, String tag, Map<String, String> features, Map<AttributeTags, String> taggedFeatures) {
         this.location = new CorpusLocation(surah,ayah,word,letter);
@@ -40,6 +41,8 @@ public class CorpusItem {
             String tv = ts.length>1?ts[1]:"";
             features.put(t, tv );
             distinctAttributes.add(t+":"+tv);
+            if(!t.equals("ROOT") && !t.equals("LEM"))
+                distinctAttributeValues.add(tv);
             AttributeTags parsedTag = AttributeTags.parse(t);
             if(parsedTag!=null && parsedTag!=AttributeTags.None) {
                 taggedFeatures.put(parsedTag,  tv );
