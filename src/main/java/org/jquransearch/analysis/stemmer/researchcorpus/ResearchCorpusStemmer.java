@@ -44,6 +44,7 @@ public class ResearchCorpusStemmer {
             put("conj_sub", String.valueOf(PartOfSpeechTag.SUB));
             put("verb", String.valueOf(PartOfSpeechTag.V));
             put("part_voc", String.valueOf(PartOfSpeechTag.VOC));
+            put("adv_interrog", String.valueOf(PartOfSpeechTag.INTERROG_ADV));
         }};
     static {
         try {
@@ -56,7 +57,7 @@ public class ResearchCorpusStemmer {
     public static void loadCorpusFile() throws IOException, URISyntaxException {
         String inBetween = null;
         String lastRoot = null;
-        Location lastLocation = null;
+        CorpusLocation lastLocation = null;
         for (String line : loadResourceFile("stemming/research-quranic-corpus-morphology.txt", ResearchCorpusStemmer.class, StandardCharsets.UTF_8)) {
             String trim = line.trim();
             if (StringUtils.isNotBlank(trim) && !trim.startsWith("#") && !trim.toLowerCase(Locale.ENGLISH).startsWith("location")) {
@@ -64,7 +65,7 @@ public class ResearchCorpusStemmer {
                 CorpusItem parsed = parseResearchCorpus(items);
                 CorpusLocation currentLocation = parsed.getLocation();
 
-                if (lastLocation != null && !lastLocation.equals(currentLocation)) {
+                if (lastLocation != null && !lastLocation.equalsNoLetter(currentLocation)) {
                     // unrootable word
                     addNewRoot(inBetween, ArabicText.fromUnicode(inBetween).toBuckwalter());
 
@@ -111,9 +112,6 @@ public class ResearchCorpusStemmer {
                     inBetween = String.format("%s%s", StringUtils.isNotBlank(inBetween) ? inBetween : "", text);
                     lastLocation = currentLocation;
                 }
-                if(corpus.containsKey(currentLocation)){
-                    System.out.println();
-                }
                 corpus.put(currentLocation, parsed);
             }
         }
@@ -127,9 +125,6 @@ public class ResearchCorpusStemmer {
 
     public static String stem(ArabicText text) {
         String u = text.toUnicode();
-        if (text.toUnicode().equals("ماكول")) {
-            System.out.println();
-        }
         if (roots.containsKey(u)) {
             return roots.get(u);
         }

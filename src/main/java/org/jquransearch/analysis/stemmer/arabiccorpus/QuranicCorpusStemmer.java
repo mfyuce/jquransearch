@@ -6,7 +6,6 @@ import org.jqurantree.analysis.AnalysisTable;
 import org.jqurantree.arabic.ArabicText;
 import org.jqurantree.arabic.encoding.EncodingType;
 import org.jqurantree.orthography.Document;
-import org.jqurantree.orthography.Location;
 import org.jqurantree.orthography.Token;
 
 import java.io.IOException;
@@ -21,7 +20,7 @@ import static org.jquransearch.tools.Tools.splitInput;
 
 public class QuranicCorpusStemmer {
     public static final String ROOT = "ROOT";
-    public static Map<CorpusLocation, CorpusItem> corpus = new LinkedHashMap<CorpusLocation, CorpusItem>();
+    public static Map<CorpusLocation, CorpusItem> corpus = new LinkedHashMap<>();
     public static Map<String, String> roots = new LinkedHashMap<>();
 
     static {
@@ -35,7 +34,7 @@ public class QuranicCorpusStemmer {
     public static void loadCorpusFile() throws IOException, URISyntaxException {
         String inBetween = null;
         String lastRoot = null;
-        Location lastLocation = null;
+        CorpusItem lastLocation = null;
         for (String line : loadResourceFile("stemming/quranic-corpus-morphology-0.4.txt", QuranicCorpusStemmer.class, StandardCharsets.UTF_8)) {
             String trim = line.trim();
             if (StringUtils.isNotBlank(trim) && !trim.startsWith("#") && !trim.startsWith("LOCATION")) {
@@ -43,10 +42,14 @@ public class QuranicCorpusStemmer {
                 CorpusItem parsed = parse(items);
                 CorpusLocation currentLocation = parsed.getLocation();
 
-                if (lastLocation != null && !lastLocation.equals(currentLocation)) {
+                if (lastLocation != null && ! lastLocation.getLocation().equalsNoLetter(currentLocation)) {
                     // unrootable word
-                    addNewRoot(inBetween, ArabicText.fromUnicode(inBetween).toBuckwalter());
-
+                    String rText = ArabicText.fromUnicode(inBetween).toBuckwalter();
+                    addNewRoot(inBetween, rText);
+                    String r = parsed.getTaggedFeatures().get(AttributeTags.ROOT);
+                    if(StringUtils.isNotBlank(r)){
+                        parsed.getTaggedFeatures().put(AttributeTags.ROOT, rText);
+                    }
                     inBetween = null;
                     lastRoot = null;
                     lastLocation = null;
@@ -65,7 +68,7 @@ public class QuranicCorpusStemmer {
                             if (!currentToken.equals(inBetween)) {
                                 canCheckForRoot = false;
                                 lastRoot = root;
-                                lastLocation = currentLocation;
+                                lastLocation = parsed;
                             } else {
                                 text = inBetween;
                                 inBetween = null;
@@ -76,7 +79,7 @@ public class QuranicCorpusStemmer {
                             inBetween = text;
                             lastRoot = root;
                             canCheckForRoot = false;
-                            lastLocation = currentLocation;
+                            lastLocation = parsed;
                         }
                     } else {
                         inBetween = null;
@@ -85,15 +88,16 @@ public class QuranicCorpusStemmer {
                     }
                     if (canCheckForRoot) {
                         addNewRoot(text, root);
+                        String r = parsed.getTaggedFeatures().get(AttributeTags.ROOT);
+                        if(StringUtils.isNotBlank(r)){
+                            parsed.getTaggedFeatures().put(AttributeTags.ROOT, root);
+                        }
                     }
                 } else {
                     inBetween = String.format("%s%s", StringUtils.isNotBlank(inBetween) ? inBetween : "", text);
-                    lastLocation = currentLocation;
+                    lastLocation = parsed;
                 }
 
-                if(corpus.containsKey(currentLocation)){
-                    System.out.println();
-                }
                 corpus.put(currentLocation, parsed);
             }
         }
@@ -107,9 +111,6 @@ public class QuranicCorpusStemmer {
 
     public static String stem(ArabicText text) {
         String u = text.toUnicode();
-        if (text.toUnicode().equals("ماكول")) {
-            System.out.println();
-        }
         if (roots.containsKey(u)) {
             return roots.get(u);
         }
@@ -121,7 +122,10 @@ public class QuranicCorpusStemmer {
                                        ArabicText root,
                                        ArabicText lemma,
                                        ArabicText stem,
-                                       EncodingType outputEncodingType) {
+                                       EncodingType outputEncodingType,
+                                       Map<CorpusLocation, CorpusItem> corpus,
+                                       Map<CorpusLocation, CorpusItem> compareCorpus,
+                                       boolean onlyProblems) {
         boolean stemIsBlank = stem == null;
         boolean lemmaIsBlank = lemma==null;
         boolean rootIsBlank = root==null;
@@ -131,6 +135,7 @@ public class QuranicCorpusStemmer {
         String[] noDiacriticsStems = stemIsBlank?null:splitInput(EncodingType.Buckwalter,stem.removeDiacritics());
         List<CorpusItem> ret = corpus.values().stream()
                 .filter(t -> {
+                    boolean isMatch = false;
                     if (partOfSpeechTag == PartOfSpeechTag.None || t.getPartOfSpeechTag() == partOfSpeechTag) {
                         Map<AttributeTags, String> taggedFeatures = t.getTaggedFeatures();
                         if (form == null || form == AttributeTags.None || taggedFeatures.containsKey(form)) {
@@ -145,54 +150,98 @@ public class QuranicCorpusStemmer {
                                     if (!rootIsBlank) {
                                         String currentRoot = taggedFeatures.get(AttributeTags.ROOT);
                                         if (StringUtils.isNotBlank(currentRoot) && Arrays.stream(rootTexts).anyMatch(rootText->currentRoot.equals(rootText))) {
-                                            return true;
+                                            isMatch=true;
                                         }
                                     } else {
-                                        return true;
+                                        isMatch=true;
                                     }
                                 }
                             }
                         }
                     }
-                    return false;
+                    return isMatch;
                 }).collect(Collectors.toList());
-        return toTable(ret,outputEncodingType);
+        return toTable(ret, compareCorpus, outputEncodingType,onlyProblems);
     }
 
-    public static AnalysisTable toTable(List<CorpusItem> lst,EncodingType outputEncodingType) {
-         AnalysisTable tbl = new AnalysisTable(new String[]{"location","text", "tag", "features"});
-         lst.stream().forEach(t->{
+    public static AnalysisTable toTable(List<CorpusItem> lst,
+                                        Map<CorpusLocation, CorpusItem> compareCorpus,
+                                        EncodingType outputEncodingType,
+                                        boolean onlyProblems) {
+        List<String> columns = new LinkedList<>(Arrays.asList("location", "text", "tag", "features"));
+        if (compareCorpus != null) {
+            columns.addAll(Arrays.asList("compare_tag", "compare_features"));
+        }
+        String[] columnsArr = new String[columns.size()];
+        columns.toArray(columnsArr);
+        AnalysisTable tbl = new AnalysisTable(columnsArr);
+        lst.stream().forEach(t -> {
+            boolean isMatch = true;
+            CorpusLocation location = t.getLocation();
+            String text = t.getText();
 
-             CorpusLocation location = t.getLocation();
-             String text = t.getText();
+            String root = t.getRootBW();
+            String lemma = t.getStem();
+            String stem = t.getStem();
 
-             boolean isBWEncoding = outputEncodingType.equals(EncodingType.Buckwalter);
-             ArabicText bwText = ArabicText.fromBuckwalter(text);
-             tbl.add(location.getChapterNumber() +
-                     ":" + location.getVerseNumber() +
-                     ":" + location.getTokenNumber() +
-                     ":" + location.getLetter(),
-                     isBWEncoding ?text: bwText.toString(outputEncodingType),
-                     t.getTagText(),
-                     StringUtils.join(t.getTaggedFeatures().entrySet()
-                             .stream().map(u->{
-                                 AttributeTags key = u.getKey();
-                                 String value = u.getValue();
-                                 boolean valueIsBlank = StringUtils.isBlank(value);
+            boolean isBWEncoding = outputEncodingType.equals(EncodingType.Buckwalter);
+            ArabicText bwText = ArabicText.fromBuckwalter(text);
+            PartOfSpeechTag corpusPOS = t.getPartOfSpeechTag();
+            List<Object> values = new LinkedList<>(Arrays.asList(
+                    location.getChapterNumber() +
+                            ":" + location.getVerseNumber() +
+                            ":" + location.getTokenNumber() +
+                            ":" + location.getLetter(),
+                    isBWEncoding ? text : bwText.toString(outputEncodingType),
+                    corpusPOS,
+                    getFeaturesText(outputEncodingType, t, isBWEncoding)));
+            if (compareCorpus != null) {
+                CorpusItem ci = compareCorpus.get(t.getLocation());
+                if (ci != null) {
+                    PartOfSpeechTag comparePOS = ci.getPartOfSpeechTag();
+                    String otherRoot = ci.getRootBW();
+                    String otherLemma = ci.getTaggedFeatures().get(AttributeTags.LEM);
+                    String otherStem = ci.getStem();
 
-                                 if(!isBWEncoding
-                                         && !valueIsBlank
-                                         && (key.equals(AttributeTags.LEM)
-                                                || key.equals(AttributeTags.ROOT)))
-                                 {
-                                     value = ArabicText.fromBuckwalter(value).toString(outputEncodingType);
-                                 }
-                                 return key
-                                         + (valueIsBlank?"":":" + value);
-                             })
-                             .collect(Collectors.toList()).toArray(),"|"));
-         });
+                    if(onlyProblems
+                            && corpusPOS.equals(comparePOS)
+                            && ((StringUtils.isBlank(otherRoot) && StringUtils.isBlank(root))
+                                || (otherRoot !=null && otherRoot.equals(root)))
+                            && ((StringUtils.isBlank(lemma) && StringUtils.isBlank(otherLemma))
+                                || (otherLemma!=null && otherLemma.equals(lemma)))
+                            && ((StringUtils.isBlank(stem) && StringUtils.isBlank(stem))
+                                || (stem!=null && otherLemma.equals(stem)))) {
+                        isMatch=false;
+                    }
+                    values.add(comparePOS);
+                    values.add(getFeaturesText(outputEncodingType, ci, isBWEncoding));
+                }
+            }
+            if(isMatch) {
+                tbl.add(values.toArray());
+            }
+        });
         return tbl;
+    }
+
+    private static String getFeaturesText(EncodingType outputEncodingType, CorpusItem t, boolean isBWEncoding) {
+        return StringUtils.join(t.getTaggedFeatures().entrySet()
+                .stream().map(u->{
+                    AttributeTags key = u.getKey();
+                    String value = u.getValue();
+                    boolean valueIsBlank = StringUtils.isBlank(value);
+
+                    if(!isBWEncoding
+                            && !valueIsBlank
+                            && (key.equals(AttributeTags.LEM)
+                                   || key.equals(AttributeTags.ROOT)))
+                    {
+                        value = ArabicText.fromBuckwalter(value).toString(outputEncodingType);
+                    }
+                    return key
+                            + (valueIsBlank?"":":" + value);
+                })
+                .distinct().collect(Collectors.toList()).toArray(),"|");
     }
 
     public static void main(String[] args) throws IOException, URISyntaxException {

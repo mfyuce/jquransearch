@@ -36,6 +36,9 @@ public class CorpusLocation extends Location {
         return letter == that.letter;
     }
 
+    public boolean equalsNoLetter(Object o) {
+        return super.equals(o);
+    }
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), letter);
@@ -43,9 +46,25 @@ public class CorpusLocation extends Location {
 
     @Override
     public String toString() {
-        return "CorpusLocation{" +
-                super.toString() +
-                "letter=" + letter +
-                '}';
+        // Start location.
+        StringBuilder text = new StringBuilder();
+
+        // Chapter number.
+        text.append('(');
+        text.append(getChapterNumber());
+
+        // Verse number.
+        text.append(':');
+        text.append(getVerseNumber());
+
+        text.append(':');
+        text.append(getTokenNumber());
+
+        text.append(':');
+        text.append(getLetter());
+        text.append(')');
+
+        // Return location.
+        return text.toString();
     }
 }

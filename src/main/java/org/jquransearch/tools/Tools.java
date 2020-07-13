@@ -5,8 +5,11 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.ar.ArabicStemmer;
 import org.apache.maven.shared.utils.io.FileUtils;
 import org.jquransearch.analysis.stemmer.arabiccorpus.AttributeTags;
+import org.jquransearch.analysis.stemmer.arabiccorpus.CorpusItem;
 import org.jquransearch.analysis.stemmer.arabiccorpus.PartOfSpeechTag;
 import org.jquransearch.analysis.stemmer.arabiccorpus.QuranicCorpusStemmer;
+import org.jquransearch.analysis.stemmer.researchcorpus.ResearchCorpusStemmer;
+import org.jquransearch.core.CorpusLocation;
 import org.jqurantree.analysis.AnalysisTable;
 import org.jquransearch.analysis.stemmer.StemmerType;
 import org.jquransearch.analysis.stemmer.StemmingManager;
@@ -32,6 +35,7 @@ public class Tools {
     public static final String INPUT_FORMAT = "if";
     public static final String OUTPUT_FORMAT = "of";
     public static final String OPERATION = "o";
+    public static final String CORPUS_TYPE = "ct";
     public static final String OUTPUT_FILE = "out";
     public static final String CORPUS_PART_OF_SPEECH_SEARCH = "cp";
     public static final String SEPARATOR_CHARS = "\r\n\t, ";
@@ -56,31 +60,35 @@ public class Tools {
         inputFile.setRequired(false);
         options.addOption(outputFormat);
 
-        Option output = new Option(OPERATION, "operation", true, "operation 1-Diacritics Free Search 2-Exact Token Search 3-Root Search  4-Corpus Search [Default=1]");
-        output.setRequired(false);
-        options.addOption(output);
+        Option operationCmd = new Option(OPERATION, "operation", true, "operation 1-Diacritics Free Search 2-Exact Token Search 3-Root Search  4-Corpus Search  5-Corpus Compare Search  6-Corpus Problem Search [Default=1]");
+        operationCmd.setRequired(false);
+        options.addOption(operationCmd);
+
+        Option corpusTypeCmd = new Option(CORPUS_TYPE, "corpus-type", true, "1-Quranic Corpus 2-Research Corpus [Default=1]");
+        corpusTypeCmd.setRequired(false);
+        options.addOption(corpusTypeCmd);
 
         Option partOfSpeech = new Option(CORPUS_PART_OF_SPEECH_SEARCH, "corpus-part-of-speech", true, "Nouns\n-->N=Noun\n-->PN=Proper noun\n\nDerived nominals\n-->ADJ=Adjective\n-->IMPN=Imperative verbal noun\n\nPronouns\n-->PRON=Personal pronoun\n-->DEM=Demonstrative pronoun\n-->REL=Relative pronoun\n\nAdverbs\n-->T=Time adverb\n-->LOC=Location adverb\n\nVerbs\n-->V=Verb\n\nPrepositions\n-->P=Preposition\n\nConjunctions\n-->CONJ=Coordinating conjunction\n-->SUB=Subordinating conjunction\n\nParticles\n-->ACC=Accusative particle\n-->AMD=Amendment particle\n-->ANS=Answer particle\n-->AVR=Aversion particle\n-->CERT=Particle of certainty\n-->COND=Conditional particle\n-->EXP=Exceptive particle\n-->EXH=Exhortation particle\n-->EXL=Explanation particle\n-->FUT=Future particle\n-->INC=Inceptive particle\n-->INT=Particle of interpretation\n-->INTG=Interogative particle\n-->NEG=Negative particle\n-->PRO=Prohibition particle\n-->RES=Restriction particle\n-->RET=Retraction particle\n-->SUP=Supplemental particle\n-->SUR=Surprise particle\n\nDisconnected letters\n-->INL=Quranic initials\n [Default=all]");
-        output.setRequired(false);
+        partOfSpeech.setRequired(false);
         options.addOption(partOfSpeech);
 
         Option corpusForm = new Option(CORPUS_FORM_SEARCH, "corpus-form", false, "Corpus verb forms\ni=I\nii=II\niii=III\niv=IV\nv=V\nvi=VI\nvii=VII\nviii=VIII\nix=IX\nx=X\nxi=XI\nxii=XII\n [Default=all]");
-        output.setRequired(false);
+        corpusForm.setRequired(false);
         options.addOption(corpusForm);
 
         Option corpusRoot = new Option(CORPUS_ROOT_SEARCH, "corpus-root", false, "text [Default=all]");
-        output.setRequired(false);
-        output.setOptionalArg(true);
+        corpusRoot.setRequired(false);
+        corpusRoot.setOptionalArg(true);
         options.addOption(corpusRoot);
 
         Option corpusLemma = new Option(CORPUS_LEMMA_SEARCH, "corpus-lemma", false, "text [Default=all]");
-        output.setRequired(false);
-        output.setOptionalArg(true);
+        corpusLemma.setRequired(false);
+        corpusLemma.setOptionalArg(true);
         options.addOption(corpusLemma);
 
         Option corpusStem = new Option(CORPUS_STEM_SEARCH, "corpus-stem", false, "text [Default=all]");
-        output.setRequired(false);
-        output.setOptionalArg(true);
+        corpusStem.setRequired(false);
+        corpusStem.setOptionalArg(true);
         options.addOption(corpusStem);
 
         CommandLineParser parser = new DefaultParser();
@@ -106,6 +114,7 @@ public class Tools {
         String inputFormatText = cmd.getOptionValue(INPUT_FORMAT);
         String outputFormatText = cmd.getOptionValue(OUTPUT_FORMAT);
         String operation = cmd.getOptionValue(OPERATION);
+        String corpusTypeStr = cmd.getOptionValue(CORPUS_TYPE);
         String inputPartOfSpeech = cmd.getOptionValue(CORPUS_PART_OF_SPEECH_SEARCH);
         String inputCorpusForm = cmd.getOptionValue(CORPUS_FORM_SEARCH);
         String inputCorpusRoot = cmd.getOptionValue(CORPUS_ROOT_SEARCH);
@@ -115,9 +124,14 @@ public class Tools {
         int operationNum = 1;
         int inputFormatNum = 1;
         int outputFormatNum = 1;
+        int corpusTypeNum = 1;
+        Map<CorpusLocation, CorpusItem> compareCorpus = ResearchCorpusStemmer.corpus;
         PartOfSpeechTag partOfSpeechTag = PartOfSpeechTag.None;
         if(StringUtils.isNotBlank(operation)){
             operationNum = Integer.parseInt(operation);
+        }
+        if(StringUtils.isNotBlank(corpusTypeStr)){
+            corpusTypeNum = Integer.parseInt(corpusTypeStr);
         }
         if(StringUtils.isNotBlank(inputFormatText)){
             inputFormatNum = Integer.parseInt(inputFormatText);
@@ -146,7 +160,7 @@ public class Tools {
         ArabicText inputCorpusLemmaText = null;
         ArabicText inputCorpusStemText = null;
 
-        ArabicText inputText = null;
+        ArabicText inputText = new ArabicText("");
         if(StringUtils.isNotBlank(inputTextIn)) {
             switch (inputFormatNum) {
                 case 1: //Buckwalter
@@ -183,9 +197,20 @@ public class Tools {
         if(corpusStemIsBlank && cmd.hasOption(CORPUS_STEM_SEARCH)){
             inputCorpusStemText = inputText;
         }
-
         String outPutText = null;
         boolean general_out = true;
+        Map<CorpusLocation, CorpusItem> corpus = null;
+        switch (corpusTypeNum){
+            case 1:
+            default:
+                corpus = QuranicCorpusStemmer.corpus;
+                compareCorpus = ResearchCorpusStemmer.corpus;
+                break;
+            case 2:
+                corpus = ResearchCorpusStemmer.corpus;
+                compareCorpus = QuranicCorpusStemmer.corpus;
+                break;
+        }
         switch (operationNum){
             case 1:
             default:
@@ -206,8 +231,28 @@ public class Tools {
                         inputCorpusRootText ,
                         inputCorpusLemmaText,
                         inputCorpusStemText,
-                        outputEncodingType);
+                        outputEncodingType,
+                        corpus,
+                        null,
+                        false);
                 handleResult(outputFilePath,searchResult);
+                general_out = false;
+                break;
+            case 5:
+            case 6:
+                boolean onlyProblems = operationNum == 6;
+
+                AnalysisTable compareSearchResult = QuranicCorpusStemmer.search(partOfSpeechTag,
+                        AttributeTags.parse(inputCorpusForm),
+                        inputCorpusRootText ,
+                        inputCorpusLemmaText,
+                        inputCorpusStemText,
+                        outputEncodingType,
+                        corpus,
+                        compareCorpus,
+                        onlyProblems);
+
+                handleResult(outputFilePath, compareSearchResult);
                 general_out = false;
                 break;
         }

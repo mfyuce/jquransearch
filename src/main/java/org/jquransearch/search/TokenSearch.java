@@ -178,9 +178,6 @@ public class TokenSearch {
 			String cleanText = isRemoveDiacritics ? token.removeDiacritics()
 					.toString(encodingType) : null;
 			String root = null;
-			if(token.toBuckwalter().contains("xal~")){
-				System.out.println();
-			}
 			try {
 				  root = ArabicText.fromUnicode(StemmingManager.stem(StemmerType.QuranicCorpus, token)).toString(encodingType);
 			} catch (Exception e) {
